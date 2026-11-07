@@ -157,7 +157,7 @@ jobs:
             gh release create "$RELEASE_TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --verify-tag \
-              --title "Pixtale Sync $RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
               --generate-notes
           fi
           gh release upload "$RELEASE_TAG" "$apk" "$exe" \
