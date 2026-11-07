@@ -14,7 +14,18 @@
 
 Android 仅构建 `arm64-v8a` 架构，不包含 ARM 32 位和 x86_64。本地可运行 `flutter build apk --release --target-platform android-arm64 --split-per-abi` 生成相同安装包。
 
-两个平台并行构建；Windows 任务还会运行 `flutter analyze --no-fatal-infos` 和 `flutter test`，分析错误和警告会阻止构建，提示级别的信息不会阻止构建。产物保留 14 天，工作流不会自动发布 GitHub Release。
+两个平台并行构建，安装依赖后直接打包。Actions 产物保留 14 天；手动选择分支运行时仅上传 Artifacts。
+
+### 推送标签自动发布
+
+推送 `v*` 标签（例如 `v2.0.0`）会自动触发构建。Windows 和 Android 都成功后，工作流创建对应的 GitHub Release，标题为 `Pixtale Sync v2.0.0`，并上传：
+
+- `pixtale-sync-v2.0.0-android-arm64.apk`
+- `pixtale-sync-v2.0.0-windows-x64.exe`
+
+Release 已存在时直接上传到该 Release，同名文件会被替换。使用内置的 `GITHUB_TOKEN` 发布，无需额外配置发布 Token。
+
+标签必须指向包含此工作流配置的提交；此前已经推送的标签不会自动补触发。请先提交并推送工作流修改，再创建并推送新标签。发布前同步更新 `pubspec.yaml` 中的版本号和构建号，安装包内的版本仍从该文件读取。
 
 Windows 任务安装 Inno Setup 6.5.4 及对应的简体中文语言文件，安装器版本从 `pubspec.yaml` 读取。本地仍可运行 `build.bat` 打包。
 
@@ -33,10 +44,10 @@ release APK 使用固定发布密钥签名。运行 CI 前，在仓库 **Setting
 
 CI 在 Runner 临时目录还原密钥，通过环境变量将签名配置传给 Gradle，构建后清理密钥。缺少任何 Secret 都会明确报错，密钥不会上传到构建产物。
 
-本地 release 构建从 `android/key.properties` 读取配置（已被 Git 忽略），示例：
+本地发布密钥 `pixtale-release.jks` 和 Secrets 配置 `github-secrets.json` 放在仓库根目录的 `android-signing/` 文件夹，整个文件夹已被 Git 忽略。release 构建从 `android/key.properties` 读取配置（也已被 Git 忽略），示例：
 
 ```properties
-storeFile=C:/path/to/pixtale-release.jks
+storeFile=../../android-signing/pixtale-release.jks
 storePassword=YOUR_KEYSTORE_PASSWORD
 keyAlias=pixtale
 keyPassword=YOUR_KEY_PASSWORD
